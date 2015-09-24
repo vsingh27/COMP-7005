@@ -9,6 +9,10 @@ import java.io.*;
 public class client
 {
 
+    //Private method to receive file
+    //will take a file name to receive
+    //Input Stream
+
     //Private method to send files
     //will take a file name to send
     //Output stream
@@ -17,9 +21,11 @@ public class client
 
     }
 
-    //Private method to receive file
-    //will take a file name to receive
-    //Input Stream
+    private void receive()
+    {
+
+    }
+
 
     public static void main(String[] args)
     {
@@ -33,7 +39,7 @@ public class client
             System.out.println("Just connected to " + client.getRemoteSocketAddress());
             OutputStream outToServer = client.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
-            out.writeUTF("Hello from " + client.getLocalSocketAddress() + "\n" + "I will SEND or GET files" );
+            out.writeUTF("Hello from " + client.getLocalSocketAddress() + "\n" + "I will SEND or GET files");
             InputStream inFromServer = client.getInputStream();
             DataInputStream in = new DataInputStream(inFromServer);
             System.out.println("Server says " + in.readUTF());
@@ -45,5 +51,7 @@ public class client
 
         //test
 
+
     }
+
 }
