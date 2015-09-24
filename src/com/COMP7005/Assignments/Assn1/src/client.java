@@ -8,6 +8,19 @@ import java.io.*;
  */
 public class client
 {
+
+    //Private method to send files
+    //will take a file name to send
+    //Output stream
+    private void send()
+    {
+
+    }
+
+    //Private method to receive file
+    //will take a file name to receive
+    //Input Stream
+
     public static void main(String[] args)
     {
         String serverName = args[0];
