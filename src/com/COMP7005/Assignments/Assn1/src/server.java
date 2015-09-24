@@ -19,8 +19,37 @@ public class server extends Thread
     public server(int port) throws IOException
     {
         serverSocket = new ServerSocket(port);
-        serverSocket.setSoTimeout(10000);
+        //serverSocket.setSoTimeout(10000);
 
+    }
+
+    private int send(Socket soc, String fileName)
+    {
+        File file = new File(fileName);
+        System.out.println("Hello " + soc.getRemoteSocketAddress() + " Sending file: " + file.getName());
+        try
+        {
+            if (file.exists() && !file.isDirectory())
+            {
+                byte[] fileData = new byte[(int)file.length()];
+                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+                bis.read(fileData,0, fileData.length);
+
+                BufferedOutputStream bos = new BufferedOutputStream(soc.getOutputStream(), (int)file.length());
+                bos.write(fileData,0, fileData.length);
+
+                bos.flush();
+                bis.close();
+                return 0;
+            } else return -1;
+
+        }catch(IOException e)
+        {
+            System.out.println("Messed up on the server side while sending file. ");
+            e.printStackTrace();
+        }
+
+        return 0;
     }
 
     //Bind the socket
@@ -51,6 +80,9 @@ public class server extends Thread
 
         }
     }
+
+
+
 
     public static void main(String[] args)
     {
