@@ -10,8 +10,8 @@ public class client
 {
 
     /*Private method to receive file
-    /will take a file name to receive
-    */Input Stream
+    will take a file name to receive
+    Input Stream*/
 
 
     private void send()
@@ -20,8 +20,8 @@ public class client
     }
 
     /*Private method to send files
-    /will take a file name to send
-    */Output stream
+    will take a file name to send
+    Output stream*/
     private void receive()
     {
 
