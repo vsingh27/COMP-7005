@@ -9,18 +9,19 @@ import java.io.*;
 public class client
 {
 
-    //Private method to receive file
-    //will take a file name to receive
-    //Input Stream
+    /*Private method to receive file
+    /will take a file name to receive
+    */Input Stream
 
-    //Private method to send files
-    //will take a file name to send
-    //Output stream
+
     private void send()
     {
 
     }
 
+    /*Private method to send files
+    /will take a file name to send
+    */Output stream
     private void receive()
     {
 
