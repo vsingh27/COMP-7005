@@ -24,6 +24,7 @@ public class client
 
     /*Private method to receive files
     will take a file name to receive
+    will create a socket as well
     input stream*/
     private static int receive(String fileName) throws IOException
     {
