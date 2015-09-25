@@ -31,19 +31,19 @@ public class server extends Thread
         {
             if (file.exists() && !file.isDirectory())
             {
-                byte[] fileData = new byte[(int)file.length()];
+                byte[] fileData = new byte[(int) file.length()];
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-                bis.read(fileData,0, fileData.length);
+                bis.read(fileData, 0, fileData.length);
 
-                BufferedOutputStream bos = new BufferedOutputStream(soc.getOutputStream(), (int)file.length());
-                bos.write(fileData,0, fileData.length);
+                BufferedOutputStream bos = new BufferedOutputStream(soc.getOutputStream(), (int) file.length());
+                bos.write(fileData, 0, fileData.length);
 
                 bos.flush();
                 bis.close();
                 return 0;
             } else return -1;
 
-        }catch(IOException e)
+        } catch (IOException e)
         {
             System.out.println("Messed up on the server side while sending file. ");
             e.printStackTrace();
@@ -64,6 +64,8 @@ public class server extends Thread
                 System.out.println("Connected to client: " + soc.getRemoteSocketAddress());
                 DataInputStream in = new DataInputStream(soc.getInputStream());
                 System.out.println(in.readUTF());
+                System.out.println("Here is the choice sent by client " + in.readInt());
+                System.out.println("Here is the file name " + in.readUTF());
 
                 DataOutputStream out = new DataOutputStream(soc.getOutputStream());
                 out.writeUTF("Thanks for connecting to " + soc.getLocalSocketAddress() + " Good Bye!");
@@ -80,8 +82,6 @@ public class server extends Thread
 
         }
     }
-
-
 
 
     public static void main(String[] args)
