@@ -23,7 +23,9 @@ public class server extends Thread
 
     }
 
-    private int send(Socket soc, String fileName)
+
+
+    private static int send(Socket soc, String fileName)
     {
         File file = new File(fileName);
         System.out.println("Hello " + soc.getRemoteSocketAddress() + " Sending file: " + file.getName());
@@ -65,10 +67,15 @@ public class server extends Thread
                 DataInputStream in = new DataInputStream(soc.getInputStream());
                 System.out.println(in.readUTF());
                 System.out.println("Here is the choice sent by client " + in.readInt());
-                System.out.println("Here is the file name " + in.readUTF());
+
+                String fileName = in.readUTF();
+                System.out.println("Here is the file name " + fileName);
 
                 DataOutputStream out = new DataOutputStream(soc.getOutputStream());
+                System.out.println("i am sending the file " + fileName);
+                send(soc, fileName);
                 out.writeUTF("Thanks for connecting to " + soc.getLocalSocketAddress() + " Good Bye!");
+
                 soc.close();
             } catch (SocketTimeoutException se)
             {

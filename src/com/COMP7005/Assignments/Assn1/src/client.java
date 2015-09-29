@@ -26,10 +26,10 @@ public class client
     will take a file name to receive
     will create a socket as well
     input stream*/
-    private static int receive(String fileName) throws IOException
+    private static int receive(String fileName, Socket client) throws IOException
     {
         File file = new File(fileName);
-        Socket client = new Socket(SERVER_NAME, PORT);
+
         System.out.println("Just connected to " + client.getRemoteSocketAddress());
         if (file.isDirectory())
         {
@@ -42,8 +42,22 @@ public class client
         out.writeUTF("Hello from " + client.getLocalSocketAddress() + "\n" + "I will SEND or GET files");
         out.writeInt(2);
         out.writeUTF(fileName);
-        client.close();
+        
+        //client.close();
         return 0;
+    }
+
+
+    private static Socket connect() throws IOException
+    {
+        Socket client = new Socket(SERVER_NAME, PORT);
+        return client;
+
+    }
+
+    private static void disconnet( Socket soc) throws  IOException
+    {
+        soc.close();
     }
 
 
@@ -94,7 +108,9 @@ public class client
                     case 2:
                         System.out.println("Please specify the file to receive");
                         String recFileName = scan.next();
-                        receive(recFileName);
+                        Socket client = connect();
+                        receive(recFileName, client);
+                        disconnet(client);
                         break;
                     default:
                         System.out.println("Invalid option");
