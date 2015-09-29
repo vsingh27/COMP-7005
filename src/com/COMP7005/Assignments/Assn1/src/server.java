@@ -14,6 +14,7 @@ public class server extends Thread
 
     private static final int SERVER_TCP_PORT = 7005;
     private ServerSocket serverSocket;
+    private static  String FILE_TO_SEND = "";
 
     //Creates a Server Socket
     public server(int port) throws IOException
@@ -25,25 +26,30 @@ public class server extends Thread
 
 
 
-    private static int send(Socket soc, String fileName)
+    private static  void send(Socket soc)
     {
-        File file = new File(fileName);
-        System.out.println("Hello " + soc.getRemoteSocketAddress() + " Sending file: " + file.getName());
+        File file = new File(FILE_TO_SEND);
+        System.out.println("Hello " + soc.getRemoteSocketAddress() + " Sending file: " + file.getPath());
         try
         {
+            //Sending the file
             if (file.exists() && !file.isDirectory())
             {
                 byte[] fileData = new byte[(int) file.length()];
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-                bis.read(fileData, 0, fileData.length);
+                //bis.read(fileData, 0, fileData.length);
+                System.out.println("Sending " + FILE_TO_SEND + "(" + fileData.length + " bytes)");
 
                 BufferedOutputStream bos = new BufferedOutputStream(soc.getOutputStream(), (int) file.length());
                 bos.write(fileData, 0, fileData.length);
-
-                bos.flush();
                 bis.close();
-                return 0;
-            } else return -1;
+                System.out.println("Done!");
+
+            } else
+            {
+                System.out.println("File requested does not exist or is not a file");
+
+            }
 
         } catch (IOException e)
         {
@@ -51,12 +57,13 @@ public class server extends Thread
             e.printStackTrace();
         }
 
-        return 0;
+
     }
 
     //Bind the socket
     public void run()
     {
+        int choice;
         while (true)
         {
             try
@@ -65,16 +72,17 @@ public class server extends Thread
                 Socket soc = serverSocket.accept();// Will wait for incoming connections or will timeout if the serversocket timesout
                 System.out.println("Connected to client: " + soc.getRemoteSocketAddress());
                 DataInputStream in = new DataInputStream(soc.getInputStream());
-                System.out.println(in.readUTF());
-                System.out.println("Here is the choice sent by client " + in.readInt());
+                choice = in.readInt();
+                System.out.println("Here is the choice sent by client " +choice );
 
-                String fileName = in.readUTF();
-                System.out.println("Here is the file name " + fileName);
+                FILE_TO_SEND = in.readUTF();
+                System.out.println("Here is the file name " + FILE_TO_SEND);
 
+
+                send(soc);
                 DataOutputStream out = new DataOutputStream(soc.getOutputStream());
-                System.out.println("i am sending the file " + fileName);
-                send(soc, fileName);
                 out.writeUTF("Thanks for connecting to " + soc.getLocalSocketAddress() + " Good Bye!");
+                out.flush();
 
                 soc.close();
             } catch (SocketTimeoutException se)
