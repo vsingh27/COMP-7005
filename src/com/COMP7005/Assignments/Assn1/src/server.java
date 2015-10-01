@@ -14,7 +14,9 @@ public class server extends Thread
 
     private static final int SERVER_TCP_PORT = 7005;
     private ServerSocket serverSocket;
-    private static  String FILE_TO_SEND = "";
+    private static String FILE_TO_SEND = "";
+    private static int CHOICE = 0;
+
 
     //Creates a Server Socket
     public server(int port) throws IOException
@@ -24,12 +26,26 @@ public class server extends Thread
 
     }
 
+    private static void recHeader(Socket soc)
+    {
+        try
+        {
+            DataInputStream in = new DataInputStream(soc.getInputStream());
+            CHOICE = in.readInt();
+            FILE_TO_SEND = in.readUTF();
 
+            System.out.println("Echoing Client's choice: " + CHOICE);
+            System.out.println("Echoing  path of the file to send: " + FILE_TO_SEND);
+        } catch (IOException e)
+        {
+            System.out.println("Error occured while receiving header on server");
+            e.printStackTrace();
+        }
+    }
 
-    private static  void send(Socket soc)
+    private static void send(Socket soc)
     {
         File file = new File(FILE_TO_SEND);
-        System.out.println("Hello " + soc.getRemoteSocketAddress() + " Sending file: " + file.getPath());
         try
         {
             //Sending the file
@@ -37,12 +53,13 @@ public class server extends Thread
             {
                 byte[] fileData = new byte[(int) file.length()];
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
-                //bis.read(fileData, 0, fileData.length);
+                bis.read(fileData, 0, fileData.length);
                 System.out.println("Sending " + FILE_TO_SEND + "(" + fileData.length + " bytes)");
-
                 BufferedOutputStream bos = new BufferedOutputStream(soc.getOutputStream(), (int) file.length());
                 bos.write(fileData, 0, fileData.length);
+                bos.close();
                 bis.close();
+                soc.close();
                 System.out.println("Done!");
 
             } else
@@ -57,34 +74,34 @@ public class server extends Thread
             e.printStackTrace();
         }
 
-
     }
 
     //Bind the socket
     public void run()
     {
-        int choice;
         while (true)
         {
             try
             {
                 System.out.println("Waiting to connect to the client.....Will timeout in 10 SECS");
-                Socket soc = serverSocket.accept();// Will wait for incoming connections or will timeout if the serversocket timesout
-                System.out.println("Connected to client: " + soc.getRemoteSocketAddress());
-                DataInputStream in = new DataInputStream(soc.getInputStream());
-                choice = in.readInt();
-                System.out.println("Here is the choice sent by client " +choice );
+                Socket controlSocket = serverSocket.accept();// Will wait for incoming connections or will timeout if the serversocket timesout
+                System.out.println("Connected to client: " + controlSocket.getRemoteSocketAddress());
 
-                FILE_TO_SEND = in.readUTF();
-                System.out.println("Here is the file name " + FILE_TO_SEND);
+                recHeader(controlSocket);
 
+                switch (CHOICE)
+                {
+                    case 1:
+                        break;
+                    case 2:
+                        Socket dataSock = serverSocket.accept();
+                        send(dataSock);
+                        break;
+                    default:
+                        System.out.println("HAHAHAHAHAHAH good try, but you fail!!!!!!");
+                        break;
+                }
 
-                send(soc);
-                DataOutputStream out = new DataOutputStream(soc.getOutputStream());
-                out.writeUTF("Thanks for connecting to " + soc.getLocalSocketAddress() + " Good Bye!");
-                out.flush();
-
-                soc.close();
             } catch (SocketTimeoutException se)
             {
                 se.printStackTrace();
