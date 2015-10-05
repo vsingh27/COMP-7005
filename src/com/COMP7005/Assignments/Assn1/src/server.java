@@ -1,6 +1,6 @@
 package com.COMP7005.Assignments.Assn1.src;
 
-import sun.tools.java.ClassNotFound;
+
 
 import java.io.*;
 import java.net.*;
@@ -48,7 +48,7 @@ public class server extends Thread
         }
     }
 
-    private static void send(Socket workerSoc) throws FileNotFoundException, IOException, ClassNotFound
+    private static void send(Socket workerSoc) throws FileNotFoundException, IOException
     {
         File file = new File(FILE_TO_SEND);
 
@@ -113,9 +113,6 @@ public class server extends Thread
             } catch (IOException e)
             {
                 e.printStackTrace();
-            } catch (ClassNotFound cnf)
-            {
-                cnf.printStackTrace();
             }
 
 
