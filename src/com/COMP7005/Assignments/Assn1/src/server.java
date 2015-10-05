@@ -1,5 +1,7 @@
 package com.COMP7005.Assignments.Assn1.src;
 
+import sun.tools.java.ClassNotFound;
+
 import java.io.*;
 import java.net.*;
 
@@ -14,8 +16,10 @@ public class server extends Thread
 
     private static final int SERVER_TCP_PORT = 7005;
     private ServerSocket serverSocket;
+    private Socket dataSock;
     private static String FILE_TO_SEND = "";
     private static int CHOICE = 0;
+    private static final int FILE_SIZE = 16 *1024;
 
 
     //Creates a Server Socket
@@ -31,11 +35,12 @@ public class server extends Thread
         try
         {
             DataInputStream in = new DataInputStream(soc.getInputStream());
+
             CHOICE = in.readInt();
             FILE_TO_SEND = in.readUTF();
 
-            System.out.println("Echoing Client's choice: " + CHOICE);
-            System.out.println("Echoing  path of the file to send: " + FILE_TO_SEND);
+            System.out.println("Choice " + CHOICE);
+            System.out.println("File :" + FILE_TO_SEND);
         } catch (IOException e)
         {
             System.out.println("Error occured while receiving header on server");
@@ -43,38 +48,38 @@ public class server extends Thread
         }
     }
 
-    private static void send(Socket soc)
+    private static void send(Socket workerSoc) throws FileNotFoundException, IOException, ClassNotFound
     {
         File file = new File(FILE_TO_SEND);
-        try
+
+        //Sending the file
+        if (file.exists() && !file.isDirectory())
         {
-            //Sending the file
-            if (file.exists() && !file.isDirectory())
+            if (file.length() > 0 && file.length() <= FILE_SIZE)
             {
                 byte[] fileData = new byte[(int) file.length()];
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
                 bis.read(fileData, 0, fileData.length);
                 System.out.println("Sending " + FILE_TO_SEND + "(" + fileData.length + " bytes)");
-                BufferedOutputStream bos = new BufferedOutputStream(soc.getOutputStream(), (int) file.length());
+                BufferedOutputStream bos = new BufferedOutputStream(workerSoc.getOutputStream(), (int) file.length());
                 bos.write(fileData, 0, fileData.length);
                 bos.close();
                 bis.close();
-                soc.close();
+                workerSoc.close();
                 System.out.println("Done!");
-
             } else
             {
-                System.out.println("File requested does not exist or is not a file");
 
+                System.out.println("File size too big!!!" +" File Size: " + file.length());
             }
 
-        } catch (IOException e)
+        } else
         {
-            System.out.println("Messed up on the server side while sending file. ");
-            e.printStackTrace();
+            System.out.println("File does not exist!!! "  + file.getName());
         }
 
     }
+
 
     //Bind the socket
     public void run()
@@ -84,33 +89,35 @@ public class server extends Thread
             try
             {
                 System.out.println("Waiting to connect to the client.....Will timeout in 10 SECS");
-                Socket controlSocket = serverSocket.accept();// Will wait for incoming connections or will timeout if the serversocket timesout
-                System.out.println("Connected to client: " + controlSocket.getRemoteSocketAddress());
-
-                recHeader(controlSocket);
-
+                dataSock = serverSocket.accept();// Will wait for incoming connections or will timeout if the serversocket timesout
+                System.out.println("Connected to client: " + dataSock.getRemoteSocketAddress());
+                recHeader(dataSock);
                 switch (CHOICE)
                 {
                     case 1:
+                        System.out.println("Call get method");
                         break;
                     case 2:
-                        Socket dataSock = serverSocket.accept();
+                         //dataSock = serverSocket.accept();
+
                         send(dataSock);
                         break;
                     default:
-                        System.out.println("HAHAHAHAHAHAH good try, but you fail!!!!!!");
                         break;
                 }
 
             } catch (SocketTimeoutException se)
             {
                 se.printStackTrace();
-                break;
+
             } catch (IOException e)
             {
                 e.printStackTrace();
-                break;
+            } catch (ClassNotFound cnf)
+            {
+                cnf.printStackTrace();
             }
+
 
         }
     }
