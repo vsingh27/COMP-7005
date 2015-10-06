@@ -16,57 +16,113 @@ public class client
 
     private static String SERVER_NAME = "localhost";
     private static int PORT = 7005;
-    private static final int FILE_BUFFER = 16 * 1024;
+    private static final int FILE_SIZE = 16 * 1024;
 
-    private static void send(String file)
+    /**
+     * @param file the file to be sent to the server
+     * @param client The socket used to connect to the server
+     * @throws IOException
+     */
+    private static void send(File file, Socket client) throws IOException
     {
+        if (file.exists() && !file.isDirectory())
+        {
+
+            if (file.length() > 0 && file.length() <= FILE_SIZE)
+            {
+                byte[] fileData = new byte[(int) file.length()];
+                BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+                bis.read(fileData, 0, fileData.length);
+                System.out.println("Sending " + file.getName() + "(" + fileData.length + " bytes)");
+                BufferedOutputStream bos = new BufferedOutputStream(client.getOutputStream(), (int) file.length());
+
+                bos.write(fileData, 0, fileData.length);
+                bos.close();
+                bis.close();
+                //client.close();
+                System.out.println("Done!");
+            } else
+            {
+                DataOutputStream dos = new DataOutputStream(client.getOutputStream());
+                dos.writeInt(1);
+                dos.flush();
+                System.out.println("File size too big!!!" + " File Size: " + file.length());
+            }
+
+        } else
+        {
+            DataOutputStream dos = new DataOutputStream(client.getOutputStream());
+            dos.writeInt(2);
+            dos.flush();
+            System.out.println("File does not exist!!! " + file.getName());
+
+        }
 
     }
 
-    /*Private method to get files
-    will take a file name to get
-    will create a socket as well
-    input stream*/
+
+    /**
+     * @param file the file to receive
+     * @param client the socket to cnnect to the client
+     * @return
+     * @throws IOException
+     */
     private static int get(File file, Socket client) throws IOException
     {
         System.out.println("Getting file from " + client.getRemoteSocketAddress());
         int bytesRead;
         int current = 0;
 
-        byte[] serverData = new byte[FILE_BUFFER];
+        byte[] serverData = new byte[FILE_SIZE];
         InputStream is = client.getInputStream();
         String workingDirectory = System.getProperty("user.dir");
         String filePath = workingDirectory + File.separator + "download" + File.separator + file.getName();
+        DataInputStream dis = new DataInputStream(client.getInputStream());
+        int i = dis.readInt();
 
-        do
+        if (i == 1)
         {
-            bytesRead = is.read(serverData, current, (serverData.length - current));
-            if (bytesRead >= 0)
+            System.out.println("File size too big");
+        } else if (i == 2)
+        {
+            System.out.println("File not found on the server");
+        } else
+        {
+            while ((bytesRead = is.read(serverData, current, (serverData.length - current))) != -1)
             {
-                current += bytesRead;
+                if (bytesRead >= 0)
+                {
+                    current += bytesRead;
+                }
             }
 
-        } while (bytesRead > -1);
-
+        }
         BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
         bos.write(serverData, 0, current);
         bos.flush();
+        dis.close();
         System.out.println("File " + filePath + " downloaded (" + current + " bytes read)");
         client.close();
         return 0;
     }
 
+    /**
+     * @return the socket binded to the server
+     * @throws IOException
+     */
     // Creates a socket
     private static Socket connect() throws IOException
     {
-        System.out.println("Creating a socket...jhkh");
-
         Socket client = new Socket(SERVER_NAME, PORT);
         System.out.println("Socket created at " + client.getLocalSocketAddress() + "...");
 
         return client;
     }
 
+    /**
+     * @param soc the socket to be disconnected
+     * @throws IOException
+     */
     //disconnects the socket
     private static void disconnet(Socket soc) throws IOException
     {
@@ -75,16 +131,18 @@ public class client
     }
 
 
+    /**
+     * @param filePath path of the file name
+     * @param choice choice 1->Send, 2-> Get, 0-> Quit
+     * @param soc Socket that is binded with the server
+     */
     private static void sendHeader(String filePath, int choice, Socket soc)
     {
-        System.out.println("Sending Header Info to the Server");
-        System.out.println("File: " + filePath);
-        System.out.println("Choice: " + choice);
         try
         {
             OutputStream outToServer = soc.getOutputStream();
             DataOutputStream out = new DataOutputStream(outToServer);
-            out.writeInt(2);
+            out.writeInt(choice);
             out.writeUTF(filePath);
             out.flush();
 
@@ -96,13 +154,9 @@ public class client
     }
 
 
-    private static int recHeader(DataOutputStream dos)
-    {
-        return 1;
-
-    }
-
-
+    /**
+     * @param args
+     */
     public static void main(String[] args)
     {
         if (args.length != 2)
@@ -118,8 +172,6 @@ public class client
         int choice = 1;
         try
         {
-            //Socket controlSocket = connect();
-
             while (choice != 0)
             {
 
@@ -141,16 +193,21 @@ public class client
                         case 1:
                             System.out.println("Please specify the file to send");
                             String sendFileName = scan.next();
-                            send(sendFileName);
+                            File file = new File(sendFileName);
+                            Socket workerSocket = connect();
+                            sendHeader(file.getPath(), choice, workerSocket);
+                            send(file, workerSocket);
+                            disconnet(workerSocket);
+
                             break;
                         case 2:
                             System.out.println("Please specify the file to get");
                             String recFileName = scan.next();
-                            File file = new File(recFileName);
-                            Socket workerSocket = connect();
-                            sendHeader(file.getPath(), choice, workerSocket);
-                            get(file, workerSocket);
-                            disconnet(workerSocket);
+                            File file1 = new File(recFileName);
+                            Socket workerSocket1 = connect();
+                            sendHeader(file1.getPath(), choice, workerSocket1);
+                            get(file1, workerSocket1);
+                            disconnet(workerSocket1);
                             break;
                     }
                 } else
@@ -159,7 +216,6 @@ public class client
                     choice = 0;
                 }
             }
-            //disconnet(controlSocket);
         } catch (IOException e)
         {
             e.printStackTrace();

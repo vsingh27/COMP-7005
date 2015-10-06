@@ -1,7 +1,6 @@
 package com.COMP7005.Assignments.Assn1.src;
 
 
-
 import java.io.*;
 import java.net.*;
 
@@ -11,25 +10,27 @@ import java.net.*;
 public class server extends Thread
 {
 
-    //Server information
-    //port
-
     private static final int SERVER_TCP_PORT = 7005;
     private ServerSocket serverSocket;
     private Socket dataSock;
     private static String FILE_TO_SEND = "";
     private static int CHOICE = 0;
-    private static final int FILE_SIZE = 16 *1024;
+    private static final int FILE_SIZE = 16 * 1024;
 
 
+    /**
+     * @param port
+     * @throws IOException
+     */
     //Creates a Server Socket
     public server(int port) throws IOException
     {
         serverSocket = new ServerSocket(port);
-        //serverSocket.setSoTimeout(10000);
-
     }
 
+    /**
+     * @param soc
+     */
     private static void recHeader(Socket soc)
     {
         try
@@ -38,9 +39,6 @@ public class server extends Thread
 
             CHOICE = in.readInt();
             FILE_TO_SEND = in.readUTF();
-
-            System.out.println("Choice " + CHOICE);
-            System.out.println("File :" + FILE_TO_SEND);
         } catch (IOException e)
         {
             System.out.println("Error occured while receiving header on server");
@@ -48,7 +46,58 @@ public class server extends Thread
         }
     }
 
-    private static void send(Socket workerSoc) throws FileNotFoundException, IOException
+
+    /**
+     * @param workerSoc
+     * @throws IOException
+     */
+    private static void get(Socket workerSoc) throws IOException
+    {
+        System.out.println("Getting file from " + workerSoc.getRemoteSocketAddress());
+        int bytesRead;
+        int current = 0;
+
+        byte[] serverData = new byte[FILE_SIZE];
+
+
+        InputStream is = workerSoc.getInputStream();
+        String workingDirectory = System.getProperty("user.dir");
+        String filePath = workingDirectory + File.separator + "download" + File.separator + FILE_TO_SEND;
+        DataInputStream dis = new DataInputStream(workerSoc.getInputStream());
+        int i = dis.readInt();
+
+        if (i == 1)
+        {
+            System.out.println("File size too big");
+            return;
+        } else if (i == 2)
+        {
+            System.out.println("File not found on the server");
+            return;
+        } else
+        {
+            while ((bytesRead = is.read(serverData, current, (serverData.length - current))) != -1)
+            {
+                if (bytesRead >= 0)
+                {
+                    current += bytesRead;
+                }
+            }
+
+        }
+        BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(filePath));
+        bos.write(serverData, 0, current);
+        bos.flush();
+        dis.close();
+        System.out.println("File " + filePath + " downloaded (" + current + " bytes read)");
+        workerSoc.close();
+    }
+
+    /**
+     * @param workerSoc
+     * @throws IOException
+     */
+    private static void send(Socket workerSoc) throws IOException
     {
         File file = new File(FILE_TO_SEND);
 
@@ -57,11 +106,13 @@ public class server extends Thread
         {
             if (file.length() > 0 && file.length() <= FILE_SIZE)
             {
+
                 byte[] fileData = new byte[(int) file.length()];
                 BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
                 bis.read(fileData, 0, fileData.length);
                 System.out.println("Sending " + FILE_TO_SEND + "(" + fileData.length + " bytes)");
                 BufferedOutputStream bos = new BufferedOutputStream(workerSoc.getOutputStream(), (int) file.length());
+
                 bos.write(fileData, 0, fileData.length);
                 bos.close();
                 bis.close();
@@ -69,18 +120,26 @@ public class server extends Thread
                 System.out.println("Done!");
             } else
             {
-
-                System.out.println("File size too big!!!" +" File Size: " + file.length());
+                DataOutputStream dos = new DataOutputStream(workerSoc.getOutputStream());
+                dos.writeInt(1);
+                dos.flush();
+                System.out.println("File size too big!!!" + " File Size: " + file.length());
             }
 
         } else
         {
-            System.out.println("File does not exist!!! "  + file.getName());
+            DataOutputStream dos = new DataOutputStream(workerSoc.getOutputStream());
+            dos.writeInt(2);
+            dos.flush();
+            System.out.println("File does not exist!!! " + file.getName());
         }
 
     }
 
 
+    /**
+     *
+     */
     //Bind the socket
     public void run()
     {
@@ -95,10 +154,11 @@ public class server extends Thread
                 switch (CHOICE)
                 {
                     case 1:
-                        System.out.println("Call get method");
+                        get(dataSock);
+                        dataSock.close();
                         break;
                     case 2:
-                         //dataSock = serverSocket.accept();
+                        //dataSock = serverSocket.accept();
 
                         send(dataSock);
                         break;
@@ -120,13 +180,16 @@ public class server extends Thread
     }
 
 
+    /**
+     * @param args
+     */
     public static void main(String[] args)
     {
         int port = 0; //sets the port where the server listen
 
         if (args.length == 0)
         {
-            port = 7005;
+            port = SERVER_TCP_PORT;
         } else if (args.length == 1)
         {
             port = Integer.parseInt(args[0]);
